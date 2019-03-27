@@ -7,29 +7,34 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Drawing.Printing;
 
 namespace Schedule_Builder
 {
     public partial class TruckSchedule : Form
     {
         DataAccess db = new DataAccess();
+        Param paramTS = new Param();
 
         public TruckSchedule(string shift, string day, string month, string year)
         {
             InitializeComponent();
+            paramTS.Shift = shift; paramTS.Year = year; paramTS.Month = month; paramTS.Day = day;
 
-            dateLabel.Text = $" { day }, { getMonth(month) } { year }  { shift } Shift";
+            dateLabel.Text = $" { day }, { Helper.getMonth(month) } { year }  { shift } Shift";
 
             scheduleTemplate(shift);
+
+            fillListBoxes(paramTS.Date, shift);
         }
 
-        public void scheduleTemplate(string shift)
+        private void scheduleTemplate(string shift)
         {
             List<DataGridView> stations = new List<DataGridView> { gridSt1, gridSt2, gridSt3 };
             List<Truck> tblTrucks = db.getTrucks();
             DataGridViewComboBoxColumn comboCell = new DataGridViewComboBoxColumn();
 
-            List<Person> peopleOnShift = db.getShift(shift);
+            List<Person> peopleOnShift = db.getOnShift(shift, paramTS.Date);
            
             for (int i = 0; i < stations.Count(); i++)
             {
@@ -54,7 +59,6 @@ namespace Schedule_Builder
                 for (int j = 0; j < stations[i].RowCount; j++)
                 {
                     stations[i].Rows[j].Cells[0] = new DataGridViewComboBoxCell();
-                    ;
                     (stations[i].Rows[j].Cells[0] as DataGridViewComboBoxCell).DisplayStyle =
                         DataGridViewComboBoxDisplayStyle.Nothing;
 
@@ -66,36 +70,59 @@ namespace Schedule_Builder
             }
         }
 
-        private string getMonth(string num)
+        private void fillListBoxes(string date, string shift)
         {
-            switch (num)
+            List<LeaveInfo> all = db.getLeaveInfoDate(date);
+            List<LeaveInfo> leave = new List<LeaveInfo>();
+            List<LeaveInfo> tdy = new List<LeaveInfo>();
+            List<LeaveInfo> unavail = new List<LeaveInfo>();
+
+            for (int i = 0; i < all.Count(); i++)
             {
-                case "1":
-                    return "January";
-                case "2":
-                    return "February";
-                case "3":
-                    return "March";
-                case "4":
-                    return "April";
-                case "5":
-                    return "May";
-                case "6":
-                    return "June";
-                case "7":
-                    return "July";
-                case "8":
-                    return "August";
-                case "9":
-                    return "September";
-                case "10":
-                    return "October";
-                case "11":
-                    return "November";
-                case "12":
-                    return "December";
+                if (all[i].Leave != "")
+                {
+                    leave.Add(all[i]);
+                }
+                if (all[i].TDY != "")
+                {
+                    tdy.Add(all[i]);
+                }
+                if (all[i].Unavailable != "")
+                {
+                    unavail.Add(all[i]);
+                }
+                if (all[i].Appointments == "")
+                {
+                    all.Remove(all[i]);
+                }
             }
-            return null;
+
+            lbLeave.DataSource = leave;
+            lbTDY.DataSource = tdy;
+            lbUnavail.DataSource = unavail;
+            lbNotes.DataSource = all;
+
+            lbLeave.DisplayMember = "Name";
+            lbTDY.DisplayMember = "Name";
+            lbUnavail.DisplayMember = "Name";
+            lbNotes.DisplayMember = "AppointmentInfo";
+        }
+
+        Bitmap bmp;
+
+        private void printDocument1_PrintPage(object sender, PrintPageEventArgs e)
+        {
+            printDocument1.DefaultPageSettings.Landscape = true;
+            e.Graphics.DrawImage(bmp, e.MarginBounds);
+        }
+
+        private void btnPrint_Click_1(object sender, EventArgs e)
+        {
+            Graphics g = this.CreateGraphics();
+            bmp = new Bitmap(this.Size.Width, this.Size.Height, g);
+            Graphics mg = Graphics.FromImage(bmp);
+            mg.CopyFromScreen(this.Location.X, this.Location.Y, 0, 0, this.Size);
+            printPreviewDialog1.ShowDialog();
         }
     }
 }

@@ -31,5 +31,7 @@ namespace Schedule_Builder
                     $"(Admin: { Admin_ })";
             }
         }
+
+        public string Date_ { get; set; }
     }
 }

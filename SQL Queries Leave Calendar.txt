@@ -1,0 +1,73 @@
+			Create Leave Calendar Table
+			________________
+
+Create Table dbo.LeaveCalendar
+(
+	ID				VARCHAR(2),
+	[Date_]			DATE,
+	Leave			VARCHAR(50),
+	TDY				VARCHAR(100),
+	Appointments	VARCHAR(100),
+	Unavailable		VARCHAR(50),
+
+	Primary Key (ID, [Date_]),
+	Foreign Key (ID) References Personnel(ID),
+	Foreign Key ([Date_]) References Calendar([Date])
+)
+
+			Get Leave Info
+			________________
+
+Create Procedure LeaveCalendar_GetLeave
+	@ID		VARCHAR(2),
+	@Date_	Date
+As
+Begin
+	Set NoCount on	
+
+	Select * from LeaveCalendar
+	Where ID = @ID and Date_ = @Date_
+End
+
+			Get Leave by Date
+			________________
+
+Create Procedure LeaveCalendar_GetLeaveDate
+	@Date_	Date
+As
+Begin
+	Select * from LeaveCalendar
+	Left Join Personnel on LeaveCalendar.ID = Personnel.ID
+	Where Date_ = @Date_
+End
+
+			Add to Table
+			________________
+
+Create Procedure LeaveCalendar_AddLeave
+	@ID				VARCHAR(2),
+	@Date_			Date,
+	@Leave			VARCHAR(50),
+	@TDY			VARCHAR(100),
+	@Appointments	VARCHAR(100),
+	@Unavailable	VARCHAR(50)
+As
+Begin
+	Insert into LeaveCalendar
+	(ID, Date_, Leave, TDY, Appointments, Unavailable)
+	Values
+	(@ID, @Date_, @Leave, @TDY, @Appointments, @Unavailable)
+End
+
+
+			Delete Entry
+			________________
+
+Create Procedure LeaveCalendar_DeleteLeave
+	@ID		VARCHAR(2),
+	@Date_	Date
+As
+Begin
+	Delete from LeaveCalendar
+	Where ID = @ID and Date_ = @Date_
+End

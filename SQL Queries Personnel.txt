@@ -1,0 +1,124 @@
+			Create DB
+			________________
+
+
+CREATE DATABASE Schedules
+
+
+			Personnel Personnel Table
+			________________
+
+CREATE TABLE dbo.Personnel
+(
+	ID			VARCHAR(2)	NOT NULL PRIMARY KEY,
+	Name		VARCHAR(20) NOT NULL,
+	Admin_		VARCHAR(1)	NOT NULL,
+	Shift_		VARCHAR(1)	NOT NULL,
+	Position	VARCHAR(20) NOT NULL,
+	Kelly_Day	VARCHAR(1)	NOT NULL,
+	Station		VARCHAR(1)
+)
+
+
+			Call Shift Personnel Lists
+			________________
+
+Create Procedure dbo.Personnel_GetShift
+	@Shift_ VARCHAR(1)	
+As
+Begin
+	Set NoCount on
+
+	Select * from Personnel
+	Where Shift_ = @Shift_
+	Order by Position
+End
+
+			Get Personnel On Shift
+			________________
+
+Create Procedure Personnel_GetOnShift
+	@Shift_		VARCHAR(1),
+	@Date_		Date
+As
+Begin
+	Select * from Personnel
+	Where Shift_ = @Shift_ and NOT EXISTS
+		(
+		Select * from LeaveCalendar
+		Where Date_ = @Date_
+		and Personnel.ID = LeaveCalendar.ID and
+		(
+			LeaveCalendar.Leave != '' or LeaveCalendar.TDY != ''
+			or LeaveCalendar.Unavailable != ''
+		)
+		)
+End
+
+			Call Shift Personnel's Names
+			________________
+
+Create Procedure Personnel_GetNames
+	@Shift_		VARCHAR
+As
+Begin
+	Select Name from Personnel
+	Where Shift_ = @Shift_
+	Order by Name
+End
+
+
+			Insert Procedure
+			________________
+
+Create Procedure dbo.Personnel_Add
+	@ID			VARCHAR(2),
+	@Name		VARCHAR(20),
+	@Admin_		VARCHAR(1),
+	@Shift_		VARCHAR(1),
+	@Position	VARCHAR(20),
+	@Kelly_Day	VARCHAR(1),
+	@Station	VARCHAR(1)	
+As
+Begin
+	Set NoCount on
+
+	Insert into Personnel
+	(ID, Name, Admin_, Shift_, Position, Kelly_Day, Station)
+	Values
+	(@ID, @Name, @Admin_, @Shift_, @Position, @Kelly_Day, @Station)
+		
+End
+
+
+			Update Procedure
+			________________
+
+Create Procedure dbo.Personnel_Update
+	@ID			VARCHAR(2),
+	@Name		VARCHAR(20),
+	@Admin_		VARCHAR(1),
+	@Shift_		VARCHAR(1),
+	@Position	VARCHAR(20),
+	@Kelly_Day	VARCHAR(1),
+	@Station	VARCHAR(1)
+As
+Begin
+	Update Personnel
+	Set Name = @Name, Admin_ = @Admin_, Shift_ = @Shift_, 
+	Position = @Position, Kelly_Day = @Kelly_Day, Station = @Station
+	Where ID = @ID
+End
+
+
+			Delete from Database
+			________________
+
+Create Procedure dbo.Personnel_DeletePerson
+	@ID			VARCHAR(2)
+
+As
+Begin
+	Delete from dbo.Personnel
+	Where ID = @ID	
+End

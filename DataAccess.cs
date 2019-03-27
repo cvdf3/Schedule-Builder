@@ -11,6 +11,8 @@ namespace Schedule_Builder
 {
     public class DataAccess
     {
+        //PERSONNEL-----------------------------------------------------------------------------
+
         //gets a list of the personnel on the specified shift
         public List<Person> getShift(string shift_)
         {
@@ -19,6 +21,16 @@ namespace Schedule_Builder
             {
                 //direct SQL query is less secure than calling a procedure from the database
                 return connection.Query<Person>("dbo.Personnel_GetShift @Shift_", new { Shift_ = shift_ }).ToList(); 
+            }
+        }
+
+        //gets a list of the personnel on shift for the specified date
+        public List<Person> getOnShift(string shift_, string date)
+        {
+            using (IDbConnection connection = new System.Data.SqlClient.SqlConnection(Helper.ConnectStr("Schedules")))
+            {
+                return connection.Query<Person>("dbo.Personnel_GetOnShift @Shift_, @Date_", 
+                    new { Shift_ = shift_, Date_ = date }).ToList();
             }
         }
 
@@ -67,6 +79,17 @@ namespace Schedule_Builder
             }
         }
 
+        //gets a list of the personnel on the specified shift
+        public List<Truck> getTrucks()
+        {
+            using (IDbConnection connection = new System.Data.SqlClient.SqlConnection(Helper.ConnectStr("Schedules")))
+            {
+                return connection.Query<Truck>("dbo.Trucks_GetTrucks").ToList();
+            }
+        }
+
+        //CALENDAR-----------------------------------------------------------------------------
+
         //get the days of the month
         public List<DayInfo> getDays(string month, string year)
         {
@@ -85,14 +108,7 @@ namespace Schedule_Builder
             }
         }
 
-        //gets a list of the personnel on the specified shift
-        public List<Truck> getTrucks()
-        {
-            using (IDbConnection connection = new System.Data.SqlClient.SqlConnection(Helper.ConnectStr("Schedules")))
-            {
-                return connection.Query<Truck>("dbo.Trucks_GetTrucks").ToList();
-            }
-        }
+        //VEHICLES-----------------------------------------------------------------------------
 
         //adds or updates the information of the truck specified
         public void addUpdateTruck(string number, string station, string positions)
@@ -105,7 +121,7 @@ namespace Schedule_Builder
                 {
                     connection.Execute("dbo.Trucks_AddTruck @Number, @StationNumber, @Positions", newTruck);
                 }
-                catch(Exception e)
+                catch
                 {
                     connection.Execute("dbo.Trucks_UpdateTruck @Number, @StationNumber, @Positions", newTruck);
                     
@@ -129,6 +145,54 @@ namespace Schedule_Builder
                 catch//add parameter
                 {
                     MessageBox.Show($"{ number } not found...");
+                }
+            }
+        }
+
+        //LEAVE CALENDAR-----------------------------------------------------------------------------
+
+        //gets the leave info for the selected person
+        public List<LeaveInfo> getLeaveInfo(string id, string date)
+        {
+            using (IDbConnection connection = new System.Data.SqlClient.SqlConnection(Helper.ConnectStr("Schedules")))
+            {
+                return connection.Query<LeaveInfo>("dbo.LeaveCalendar_GetLeave @ID, @Date_", 
+                    new { ID = id, Date_ = date }).ToList();
+            }
+        }
+
+        //gets the leave info by date
+        public List<LeaveInfo> getLeaveInfoDate(string date)
+        {
+            using (IDbConnection connection = new System.Data.SqlClient.SqlConnection(Helper.ConnectStr("Schedules")))
+            {
+                return connection.Query<LeaveInfo>("dbo.LeaveCalendar_GetLeaveDate @Date_",
+                    new { Date_ = date }).ToList();
+            }
+        }
+
+        //adds or updates the leave calendar table
+        public void addLeaveInfo(string id, string name, string date, string leave, string tdy, 
+            string appointments, string unavail)
+        {
+            using (IDbConnection connection = new System.Data.SqlClient.SqlConnection(Helper.ConnectStr("Schedules")))
+            {
+                List<LeaveInfo> newLeave = new List<LeaveInfo>();
+                newLeave.Add(new LeaveInfo { ID = id, Date_ = date, Leave = leave, TDY = tdy,
+                    Appointments = appointments, Unavailable = unavail });
+                try
+                {
+                    connection.Execute("dbo.LeaveCalendar_AddLeave @ID, @Date_, @Leave, @TDY, @Appointments, " +
+                        "@Unavailable", newLeave);
+                    MessageBox.Show($"{ name }'s information has been added for { date }.");
+                }
+                catch
+                {
+                    //deletes entry, then creates a new one
+                    connection.Execute("dbo.LeaveCalendar_DeleteLeave @ID, @Date_", newLeave);
+                    connection.Execute("dbo.LeaveCalendar_AddLeave @ID, @Date_, @Leave, @TDY, @Appointments, " +
+                        "@Unavailable", newLeave);
+                    MessageBox.Show($"{ name }'s information has been updated for { date }.");
                 }
             }
         }

@@ -1,0 +1,80 @@
+			Create Station Table
+			________________
+
+Create Table dbo.Station
+(
+StationNumber		VARCHAR(1)	NOT	NULL PRIMARY KEY,
+PersonnelNeeded		VARCHAR(1) NOT NULL
+)
+
+
+			Create Truck Table
+			________________
+
+Create Table dbo.Trucks
+(
+Number			VARCHAR(10) NOT NULL PRIMARY KEY,
+StationNumber	VARCHAR(1) NOT NULL FOREIGN KEY References Station(StationNumber),
+Positions		VARCHAR(1) NOT NULL
+)
+			Populate Stations
+			________________
+
+Insert into dbo.Station
+(StationNumber, PersonnelNeeded)
+Values
+('1', '5'),
+('2', '4'),
+('3', '6')
+
+			Get List of Trucks
+			________________
+
+Create Procedure Trucks_GetTrucks
+As
+Begin
+	Set NoCount on
+
+	Select * from Trucks
+	Order by StationNumber
+End
+
+			Add Trucks
+			________________
+
+Create Procedure Trucks_AddTruck
+	@Number			VARCHAR(10),
+	@StationNumber	VARCHAR(1),
+	@Positions		VARCHAR(1)
+As
+Begin
+	Insert into Trucks
+	(Number, StationNumber, Positions)
+	Values
+	(@Number, @StationNumber, @Positions)
+End
+
+			Update Truck
+			________________
+
+Create Procedure Trucks_UpdateTruck
+	@Number			VARCHAR(10),
+	@StationNumber	VARCHAR(1),
+	@Positions		VARCHAR(1)
+As
+Begin
+	Update Trucks
+	Set StationNumber = @StationNumber, Positions = @Positions
+	Where Number = @Number
+End
+
+			Delete Trucks
+			________________
+
+Create Procedure Trucks_DeleteTruck
+	@Number			VARCHAR(10)
+As
+Begin
+	Delete from dbo.Trucks
+	Where Number = @Number
+End
